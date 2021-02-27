@@ -14,10 +14,10 @@ public class MonitorCyclicBarrier {
 	static Object o2;
 	
 	public MonitorCyclicBarrier(int parties) {
-		this.parties = parties;
-		this.leaving = 0;
-		this.o1 = new Object();
-		this.o2 = new Object();
+		MonitorCyclicBarrier.parties = parties;
+		MonitorCyclicBarrier.leaving = 0;
+		MonitorCyclicBarrier.o1 = new Object();
+		MonitorCyclicBarrier.o2 = new Object();
 	}
 	
 	/*public int await() throws InterruptedException {
@@ -55,13 +55,15 @@ public class MonitorCyclicBarrier {
 	
 	public static void waitForThreads() throws InterruptedException {
 		synchronized(o1) {
+			if (index == parties)
+				index = 0;
 			++index;
-			if (index == parties - 1) {
+			if (index == parties) {
 				o1.notifyAll();
 				leaving = parties - 1;
 			}
 			System.out.println("index is " + index);
-			while (index < parties - 1){
+			while ((index) < parties){
 				o1.wait();
 			}
 		}
@@ -71,8 +73,8 @@ public class MonitorCyclicBarrier {
 	public static void BlockFromEntering() throws InterruptedException {
 		synchronized(o2) {
 			if (leaving == 0) {
+				//index = 0;
 				o2.notifyAll();
-				index = 0;
 			}
 			while (leaving > 0) {
 				o2.wait();
@@ -81,10 +83,10 @@ public class MonitorCyclicBarrier {
 	}
 	
 	public int await() throws InterruptedException{
-		BlockFromEntering();
+		//BlockFromEntering();
 		waitForThreads();
 		decrementLeaving();
-		
+		BlockFromEntering();
 		return 1;
 	}
 	
