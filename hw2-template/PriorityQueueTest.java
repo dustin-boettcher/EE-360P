@@ -2,6 +2,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import javax.print.attribute.standard.RequestingUserName;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -37,35 +38,66 @@ class PriorityQueueTest {
     @Test
     void multiThreadedOperation() throws InterruptedException {
         int maxSize = 20;
-        int numThreads = 5;
+        int numThreads = 10;
         PriorityQueue priorityQueue = new PriorityQueue(maxSize);
         final ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-        Runnable r = () -> {
+        Runnable r1 = () -> {
             priorityQueue.add("node0" + Thread.currentThread().getName(), 9);
             priorityQueue.add("node1" + Thread.currentThread().getName(), 8);
-            assertNotEquals(-1, priorityQueue.search("node0" + Thread.currentThread().getName()));
-            assertNotEquals(-1, priorityQueue.search("node1" + Thread.currentThread().getName()));
+        };
+
+        Runnable r2 = () -> {
             System.out.println(priorityQueue.getFirst());
             System.out.println(priorityQueue.getFirst());
         };
 
-        for (int i = 0; i < numThreads; i++) {
-            pool.submit(r);
+        for (int i = 0; i < numThreads/2; i++) {
+            pool.submit(r1);
+            pool.submit(r2);
         }
 
-        Thread.sleep(1000);
+        System.out.println("Sleeping main thread for 5 seconds (add + remove)");
+        Thread.sleep(5000);
 
-        Runnable s = () -> {
+        Runnable s0 = () -> {
             System.out.println(priorityQueue.getFirst());
         };
 
-        pool.submit(s);
+        pool.submit(s0);
+
+        System.out.println("Sleeping main thread for 5 seconds (remove then add)");
+        Thread.sleep(5000);
 
         Runnable s1 = () -> {
             priorityQueue.add("node0", 9);
         };
 
         pool.submit(s1);
+
+        System.out.println("Sleeping main thread for 5 seconds");
+        Thread.sleep(5000);
+
+        // Add 21 nodes (one more than maxSize)
+        Runnable s2 = () -> {
+            for (int i = 0; i <= 20; i++) {
+                priorityQueue.add("node1", 9);
+            }
+        };
+
+        pool.submit(s2);
+
+        System.out.println("Sleeping main thread for 5 seconds (add more than maxSize then remove)");
+        Thread.sleep(5000);
+
+        // Remove 20 nodes
+        Runnable s3 = () -> {
+            for (int i = 0; i < 20; i++) {
+                System.out.println(priorityQueue.getFirst() + " " + i);
+            }
+
+        };
+
+        pool.submit(s3);
 
         pool.shutdown();
         try {
