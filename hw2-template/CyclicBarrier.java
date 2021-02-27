@@ -22,32 +22,35 @@ public class CyclicBarrier {
 	}
 	
 	public int await() throws InterruptedException {
-		
-           int retVal = index;
-           sem1.acquire();
-           if (sem1.availablePermits() == 0){
-        	   sem2Full = false;
-        	   sem1Full = true;
-           }
-           
-           sem3.acquire(); //synchronize incrementing index
-           index += 1;
-           sem3.release();
-		   while (! sem1Full){
-			   Thread.sleep(1);
-		   }
-		   sem1.release();
-		    
-		   //Stage 2
+		int retVal = index;
+		sem1.acquire();
+		if (sem1.availablePermits() == 0) {
 		   sem2Full = false;
-		   sem2.acquire();
-		   if (sem2.availablePermits() == 0) {
-			   index = 0;
-			   sem1Full = false;
-			   sem2Full = true;
-		   }
-		   while (! sem2Full) {}
-		   sem2.release();
-	    return retVal;
+		   sem1Full = true;
+		}
+
+		sem3.acquire(); //synchronize incrementing index
+		index += 1;
+		sem3.release();
+		// wait for threads to arrive
+		while (! sem1Full){
+		   Thread.sleep(1);
+		}
+		sem1.release();
+
+		//Stage 2
+		sem2Full = false;
+		sem2.acquire();
+		if (sem2.availablePermits() == 0) {
+		   	index = 0;
+		   	sem1Full = false;
+		   	sem2Full = true;
+		}
+		// block
+		while (! sem2Full) {
+			Thread.sleep(1);
+		}
+		sem2.release();
+		return retVal;
 	}
 }
