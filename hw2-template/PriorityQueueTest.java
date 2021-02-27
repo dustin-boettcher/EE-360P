@@ -35,9 +35,11 @@ class PriorityQueueTest {
     }
 
     @Test
-    void multiThreadedOperation() {
-        PriorityQueue priorityQueue = new PriorityQueue(100);
-        final ExecutorService pool = Executors.newFixedThreadPool(20);
+    void multiThreadedOperation() throws InterruptedException {
+        int maxSize = 20;
+        int numThreads = 5;
+        PriorityQueue priorityQueue = new PriorityQueue(maxSize);
+        final ExecutorService pool = Executors.newFixedThreadPool(numThreads);
         Runnable r = () -> {
             priorityQueue.add("node0" + Thread.currentThread().getName(), 9);
             priorityQueue.add("node1" + Thread.currentThread().getName(), 8);
@@ -47,9 +49,23 @@ class PriorityQueueTest {
             System.out.println(priorityQueue.getFirst());
         };
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < numThreads; i++) {
             pool.submit(r);
         }
+
+        Thread.sleep(1000);
+
+        Runnable s = () -> {
+            System.out.println(priorityQueue.getFirst());
+        };
+
+        pool.submit(s);
+
+        Runnable s1 = () -> {
+            priorityQueue.add("node0", 9);
+        };
+
+        pool.submit(s1);
 
         pool.shutdown();
         try {
