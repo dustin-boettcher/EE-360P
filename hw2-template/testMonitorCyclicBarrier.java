@@ -11,10 +11,12 @@ public class testMonitorCyclicBarrier implements Runnable {
 	}
 	
 	public void run() {
+		int index = -1;
+
 		for (int round = 0; round < ROUND; ++round) {
 			System.out.println("Thread " + Thread.currentThread().getId() + " is WAITING round:" + round);
 			try {
-				gate.await();
+				index = gate.await();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

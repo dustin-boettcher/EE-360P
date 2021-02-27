@@ -23,10 +23,12 @@ public class MonitorCyclicBarrier {
 		leaving--;
 	}
 	
-	public static void waitForThreads() throws InterruptedException {
+	public static int waitForThreads() throws InterruptedException {
+		int retVal;
 		synchronized(o1) {
 			if (index == parties)
 				index = 0;
+			retVal = index;
 			++index;
 			if (index == parties) {
 				o1.notifyAll();
@@ -36,7 +38,7 @@ public class MonitorCyclicBarrier {
 				o1.wait();
 			}
 		}
-		
+		return retVal;
 	}
 	
 	public static void BlockFromEntering() throws InterruptedException {
@@ -51,10 +53,10 @@ public class MonitorCyclicBarrier {
 	}
 	
 	public int await() throws InterruptedException{
-		waitForThreads();
+		int index = waitForThreads();
 		decrementLeaving();
 		BlockFromEntering();
-		return 1;
+		return index;
 	}
 	
 }
