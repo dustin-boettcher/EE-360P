@@ -1,93 +1,40 @@
-/*
- * UT-EID=dmb4377
- * UT-EID=ji4399
- * 
- */
+import java.util.concurrent.BrokenBarrierException;
 
-public class MonitorCyclicBarrier {
+public class testMonitorCyclicBarrier implements Runnable {
+	final static int SIZE = 5;
+	final static int ROUND = 10;
 	
-	static int index = 0;
-	static int parties;
-	static int leaving;
-	static boolean endOfRound = false;
-	static Object o1;
-	static Object o2;
+	final MonitorCyclicBarrier gate;
 	
-	public MonitorCyclicBarrier(int parties) {
-		MonitorCyclicBarrier.parties = parties;
-		MonitorCyclicBarrier.leaving = 0;
-		MonitorCyclicBarrier.o1 = new Object();
-		MonitorCyclicBarrier.o2 = new Object();
+	public testMonitorCyclicBarrier(MonitorCyclicBarrier gate) {
+		this.gate = gate;
 	}
 	
-	/*public int await() throws InterruptedException {
-		while (leaving > 0) {
-			Thread.sleep(1);
-			
-		}
-        int retVal = updateIndex();
-        System.out.println(index);
-		waitForThreads();
-		System.out.println("Left Section " + retVal + " " + index);
-		//if (retVal == parties - 1)
-			//leaving = parties - 1;
-	
-		//if (retVal == parties - 1) 
-        	//index = 0;
-          // you need to write this code
-		decrementLeaving(retVal);
-		updateIndex();
-	    return retVal;
-	}*/
-	
-	public synchronized int updateIndex() {
-		if (! endOfRound) index++;
-		if (leaving == 0 && endOfRound) {
-			index = 0;
-			endOfRound = false;
-		}
-		return index - 1;
-	}
-	
-	public synchronized void decrementLeaving() {
-		leaving--;
-	}
-	
-	public static void waitForThreads() throws InterruptedException {
-		synchronized(o1) {
-			if (index == parties)
-				index = 0;
-			++index;
-			if (index == parties) {
-				o1.notifyAll();
-				leaving = parties - 1;
+	public void run() {
+		int index = -1;
+
+		for (int round = 0; round < ROUND; ++round) {
+			System.out.println("Thread " + Thread.currentThread().getId() + " is WAITING round:" + round);
+			try {
+				index = gate.await();
+				System.out.println(index);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-			System.out.println("index is " + index);
-			while ((index) < parties){
-				o1.wait();
-			}
+			System.out.println("Thread " + Thread.currentThread().getId() + " is leaving round:" + round);
+		}
+	}
+	
+	public static void main(String[] args) {
+		MonitorCyclicBarrier gate = new MonitorCyclicBarrier(SIZE);
+		Thread[] t = new Thread[SIZE];
+		
+		for (int i = 0; i < SIZE; ++i) {
+			t[i] = new Thread(new testMonitorCyclicBarrier(gate));
 		}
 		
-	}
-	
-	public static void BlockFromEntering() throws InterruptedException {
-		synchronized(o2) {
-			if (leaving == 0) {
-				//index = 0;
-				o2.notifyAll();
-			}
-			while (leaving > 0) {
-				o2.wait();
-			}
+		for (int i = 0; i < SIZE; ++i) {
+			t[i].start();
 		}
-	}
-	
-	public int await() throws InterruptedException{
-		//BlockFromEntering();
-		waitForThreads();
-		decrementLeaving();
-		BlockFromEntering();
-		return 1;
-	}
-	
+    }
 }
