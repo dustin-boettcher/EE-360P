@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -111,7 +113,11 @@ public class BookServer {
 				}
 				if (tokens[0].equals("exit")) {
 					
-					//TODO: close the connection and make inventory file
+					//TODO: close the connection
+					PrintWriter writer = new PrintWriter("inventory.txt");
+					for (String book: books)
+						writer.println(book + " " + inventory.get(book));
+					writer.close();
 				}
 				command = receiveCommand();
 			}
