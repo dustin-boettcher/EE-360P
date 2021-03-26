@@ -1,3 +1,6 @@
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
 import java.io.*;
@@ -10,7 +13,7 @@ public class BookClient {
 
     Scanner din;
     PrintStream pout;
-    Socket server;
+    Socket tcpSocket;
 
     if (args.length != 2) {
       System.out.println("ERROR: Provide 2 arguments: commandFile, clientId");
@@ -25,10 +28,17 @@ public class BookClient {
     tcpPort = 7000;// hardcoded -- must match the server's tcp port
     udpPort = 8000;// hardcoded -- must match the server's udp port
 
+    boolean isTCP = false;
+
     try {
-      server = new Socket(hostAddress, tcpPort);
-      din = new Scanner(server.getInputStream());
-      pout = new PrintStream(server.getOutputStream());
+      tcpSocket = new Socket(hostAddress, tcpPort);
+      din = new Scanner(tcpSocket.getInputStream());
+      pout = new PrintStream(tcpSocket.getOutputStream());
+
+      InetAddress ia = InetAddress.getByName(hostAddress);
+      DatagramSocket udpSocket = new DatagramSocket();
+      byte[] rbuffer = new byte[4096];
+      DatagramPacket sPacket, rPacket;
 
       Scanner sc = new Scanner(new FileReader(commandFile));
 
@@ -38,59 +48,101 @@ public class BookClient {
       while(sc.hasNextLine()) {
         String cmd = sc.nextLine();
         String[] tokens = cmd.split(" ");
+        String command = "";
+        for (int i = 0; i < tokens.length; i++) {
+          command += tokens[i];
+          if (i != tokens.length - 1) command += " ";
+        }
 
         if (tokens[0].equals("setmode")) {
           if (tokens[1].equals("T")) {
-            server.close();
-            server = new Socket(hostAddress, tcpPort);
-            din = new Scanner(server.getInputStream());
-            pout = new PrintStream(server.getOutputStream());
+            isTCP = true;
             outputWriter.write("The communication mode is set to TCP\n");
           } else if (tokens[1].equals("U")) {
-            server.close();
-            server = new Socket(hostAddress, udpPort);
-            din = new Scanner(server.getInputStream());
-            pout = new PrintStream(server.getOutputStream());
+            isTCP = false;
             outputWriter.write("The communication mode is set to UDP\n");
           } else {
             System.out.println("ERROR: No such command");
           }
         }
         else if (tokens[0].equals("borrow")) {
-          String command = "";
-          for (int i = 0; i < tokens.length; i++) {
-            command += tokens[i];
-            if (i != tokens.length - 1) command += " ";
+          String result;
+          if (isTCP) {
+            pout.println(command);
+            pout.flush();
+            result = din.nextLine();
+          } else {
+            byte[] buffer = new byte[command.length()];
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            udpSocket.send(sPacket);
+            rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            udpSocket.receive(rPacket);
+            result = new String(rPacket.getData(), 0, rPacket.getLength());
           }
-          pout.println(command);
-          pout.flush();
-          String result = din.nextLine();
           outputWriter.write(result + "\n");
         } else if (tokens[0].equals("return")) {
-          pout.println(tokens[0] + " " + tokens[1]);
-          pout.flush();
-          String result = din.nextLine();
+          String result;
+          if (isTCP) {
+            pout.println(command);
+            pout.flush();
+            result = din.nextLine();
+          } else {
+            byte[] buffer = new byte[command.length()];
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            udpSocket.send(sPacket);
+            rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            udpSocket.receive(rPacket);
+            result = new String(rPacket.getData(), 0, rPacket.getLength());
+          }
           outputWriter.write(result + "\n");
         } else if (tokens[0].equals("inventory")) {
-          pout.println(tokens[0]);
-          pout.flush();
-          String length = din.nextLine();
-          String[] result = new String[Integer.parseInt(length)];
-          for (int i = 0; i < Integer.parseInt(length); i++) {
-            result[i] = din.nextLine();
-          }
-          for (int i = 0; i < Integer.parseInt(length); i++) {
-            outputWriter.write(result[i] + "\n");
+          if (isTCP) {
+            pout.println(command);
+            pout.flush();
+            String length = din.nextLine();
+            String[] result = new String[Integer.parseInt(length)];
+            for (int i = 0; i < Integer.parseInt(length); i++) {
+              result[i] = din.nextLine();
+            }
+            for (int i = 0; i < Integer.parseInt(length); i++) {
+              outputWriter.write(result[i] + "\n");
+            }
+          } else {
+            String result;
+            byte[] buffer = new byte[command.length()];
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            udpSocket.send(sPacket);
+            rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            udpSocket.receive(rPacket);
+            result = new String(rPacket.getData(), 0, rPacket.getLength());
+            outputWriter.write(result + "\n");
           }
         } else if (tokens[0].equals("list")) {
-          pout.println(tokens[0] + " " + tokens[1]);
-          pout.flush();
-          String result = din.nextLine();
+          String result;
+          if (isTCP) {
+            pout.println(command);
+            pout.flush();
+            result = din.nextLine();
+          } else {
+            byte[] buffer = new byte[command.length()];
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            udpSocket.send(sPacket);
+            rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            udpSocket.receive(rPacket);
+            result = new String(rPacket.getData(), 0, rPacket.getLength());
+          }
           outputWriter.write(result + "\n");
         } else if (tokens[0].equals("exit")) {
-          pout.println(tokens[0]);
-          pout.flush();
-          server.close();
+          if (isTCP) {
+            pout.println(command);
+            pout.flush();
+          } else {
+            byte[] buffer = new byte[command.length()];
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            udpSocket.send(sPacket);
+          }
+          tcpSocket.close();
+          udpSocket.close();
           outputWriter.close();
         } else {
           System.out.println("ERROR: No such command");
@@ -100,4 +152,11 @@ public class BookClient {
 	  e.printStackTrace();
     }
   }
+
+//  static void sendMessage(String command, boolean isTCP) {
+//    if (isTCP) {
+//      pout.println(command);
+//      pout.flush();
+//    }
+//  }
 }
