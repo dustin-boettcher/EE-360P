@@ -56,8 +56,8 @@ public class BookServer {
     	Socket s;
     	
     	//DEBUGGING
-    	Thread a = new ServerThread();
-    	a.start();
+    	//Thread a = new ServerThread();
+    	//a.start();
     	//
     	
     	while((s = listener.accept()) != null){
@@ -89,7 +89,7 @@ public class BookServer {
 	public void run() {
 		try {
 			String command = receiveCommand();
-			
+			setMode("T");
 			//loop to handle commands
 			while (command != null) {
 				String[] tokens = parseString(command);
@@ -112,12 +112,8 @@ public class BookServer {
 						sendMessage(str + "\n");
 				}
 				if (tokens[0].equals("exit")) {
-					
+					writeInventoryFile();
 					//TODO: close the connection
-					PrintWriter writer = new PrintWriter("inventory.txt");
-					for (String book: books)
-						writer.println(book + " " + inventory.get(book));
-					writer.close();
 				}
 				command = receiveCommand();
 			}
@@ -128,18 +124,20 @@ public class BookServer {
 	//send message with TCP or UDP
 	void sendMessage(String str) {
 		//DEBUGGING
-		System.out.print(str);
+		//System.out.print(str);
 		//UDP
 		
 		//TCP
 		//if (!isUDP)
-			//pout.print(str);
+			pout.print(str);
 		
 	}
 	
 	//receive message with TCP or UDP
 	String receiveCommand() throws IOException {
-		return reader.readLine();
+		//return reader.readLine();
+		//TCP
+		return sc.nextLine();
 	}
 	
 	//Changes the mode of communication between client and server
@@ -207,6 +205,13 @@ public class BookServer {
 	  else list.add("No record found for " + student);
 	  return list;
 	  
+  }
+  
+  static synchronized void writeInventoryFile() throws FileNotFoundException {
+	  PrintWriter writer = new PrintWriter("inventory.txt");
+		for (String book: books)
+			writer.println(book + " " + inventory.get(book));
+		writer.close();
   }
   
   //lists the current inventory
