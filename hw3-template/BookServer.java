@@ -13,6 +13,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Scanner;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class BookServer {
 	static int tcpPort = 7000; //hardcoded
@@ -51,22 +54,55 @@ public class BookServer {
     }
 
     //handle request from clients
-    try{
-    	ServerSocket listener = new ServerSocket(7000);
-    	Socket s;
+    
+    	//ServerSocket listener = new ServerSocket(7000);
+    	//Socket s;
     	
     	//DEBUGGING
     	//Thread a = new ServerThread();
     	//a.start();
     	//
     	
-    	while((s = listener.accept()) != null){
-    		Thread t = new ServerThread(s);
-    		t.start();
-    		System.out.println("New Thread");
-    	}
-    	listener.close();
-    } catch(IOException e){System.err.println("Server aborted :" + e);}
+    	Thread a = new serverListener(7000);
+    	Thread b = new serverListener(8000);
+    	a.start(); b.start();
+    	
+    
+  }
+  
+  static class serverListener extends Thread implements Runnable{
+	  int port;
+	  
+	  public serverListener(int port) {
+		  this.port = port;
+	  }
+	  
+	  @Override
+	  public void run() {
+		  try {
+		  if (port == 7000) {
+			  ServerSocket listener = new ServerSocket(port);
+			  Socket s;
+			  while((s = listener.accept()) != null) {
+				  Thread t = new ServerThread(s, port, null, null, null);
+				  t.start();
+				  System.out.println("New Thread");
+			  }
+			  listener.close();
+		  }
+		  else {
+			  DatagramSocket datasocket = new DatagramSocket(port);
+			  byte[] buf = new byte[1024];
+			  while(true) {
+				  DatagramPacket datapacket = new DatagramPacket(buf ,  buf.length );
+				  datasocket.receive(datapacket);
+				  Thread t = new ServerThread(null, 8000, datapacket.getAddress(), buf, datasocket);
+				  t.start();
+			  }
+		  }
+		  
+		  } catch (IOException e) {}
+	  }
   }
   
   //Class ServerThread
@@ -76,21 +112,30 @@ public class BookServer {
 	  Socket s; //for TCP
 	  Scanner sc; //for TCP
 	  PrintWriter pout; //for TCP
+	  InetAddress address; //for UDP
+	  byte[] buf;//for UDP
+	  DatagramSocket dataSocket;//for UDP
 	  boolean isTCP;
 	  
 	  //DEBUGGING: input from console
 	  BufferedReader reader = new BufferedReader(
 	            new InputStreamReader(System.in));
 	  
-    public ServerThread(Socket s) {
-    	this.isTCP = true;
+    public ServerThread(Socket s, int port, InetAddress address, byte[] buf, DatagramSocket dataSocket) {
+    	if (port == 7000) this.isTCP = true;
+    	else this.isTCP = false;
     	this.s = s;
+    	this.buf = buf;
+    	this.address = address;
+    	this.dataSocket = dataSocket;
     }
     
 	@Override
 	public void run() {
 		try {
-			setMode("T");
+			if (isTCP) setMode("T");
+			else setMode("U");
+			System.out.println("set mode");
 			String command = receiveCommand();
 			//loop to handle commands
 			while (command != null) {
@@ -126,25 +171,32 @@ public class BookServer {
 	}
 	
 	//send message with TCP or UDP
-	void sendMessage(String str) {
-		//if (s.isClosed()) return;
-		//DEBUGGING
-		//System.out.print(str);
-		//UDP
-		
+	void sendMessage(String str) throws IOException{
 		//TCP
-		//if (!isUDP)
-		pout.print(str);
-		pout.flush();
+		if (isTCP) {
+			pout.print(str);
+			pout.flush();
+		}
+		//UDP
+		else {
+			buf = str.getBytes();
+			DatagramPacket returnPacket = new DatagramPacket(buf, buf.length, address, 8000);
+			dataSocket.send(returnPacket);
+		}
 	}
 	
 	//receive message with TCP or UDP
 	String receiveCommand() throws IOException {
-		//return reader.readLine();
-		//TCP
-		if (! sc.hasNextLine()) return null;
-		//if (s.isClosed()) return null;
-		return sc.nextLine();
+		if (isTCP) {
+			if (! sc.hasNextLine()) return null;
+			//if (s.isClosed()) return null;
+			return sc.nextLine();
+		}
+		else {
+			DatagramPacket datapacket = new DatagramPacket(buf, buf.length);
+			String  retstring = new String(datapacket.getData(), 0, datapacket.getLength ());
+			return retstring;
+		}
 
 	}
 	
@@ -156,6 +208,7 @@ public class BookServer {
 			return "The communication mode is set to TCP";
 		}
 		else {
+			
 			return "The communication mode is set to UDP";
 		}
 	}
