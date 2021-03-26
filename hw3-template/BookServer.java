@@ -121,11 +121,13 @@ public class BookServer {
 				command = receiveCommand();
 			}
 			sc.close(); s.close(); pout.close();
+			System.out.println("Thread closed");
 		} catch(IOException e) {}
 	}
 	
 	//send message with TCP or UDP
 	void sendMessage(String str) {
+		//if (s.isClosed()) return;
 		//DEBUGGING
 		//System.out.print(str);
 		//UDP
@@ -140,7 +142,8 @@ public class BookServer {
 	String receiveCommand() throws IOException {
 		//return reader.readLine();
 		//TCP
-		if (s.isClosed()) return null;
+		if (! sc.hasNextLine()) return null;
+		//if (s.isClosed()) return null;
 		return sc.nextLine();
 
 	}
