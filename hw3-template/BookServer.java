@@ -61,7 +61,7 @@ public class BookServer {
     	//
     	
     	while((s = listener.accept()) != null){
-    		Thread t = new ServerThread();
+    		Thread t = new ServerThread(s);
     		t.start();
     	}
     	listener.close();
@@ -75,21 +75,22 @@ public class BookServer {
 	  Socket s; //for TCP
 	  Scanner sc; //for TCP
 	  PrintWriter pout; //for TCP
-	  boolean isUDP;
+	  boolean isTCP;
 	  
 	  //DEBUGGING: input from console
 	  BufferedReader reader = new BufferedReader(
 	            new InputStreamReader(System.in));
 	  
-    public ServerThread() {
-    	this.isUDP = true;
+    public ServerThread(Socket s) {
+    	this.isTCP = true;
+    	this.s = s;
     }
     
 	@Override
 	public void run() {
 		try {
-			String command = receiveCommand();
 			setMode("T");
+			String command = receiveCommand();
 			//loop to handle commands
 			while (command != null) {
 				String[] tokens = parseString(command);
@@ -129,8 +130,8 @@ public class BookServer {
 		
 		//TCP
 		//if (!isUDP)
-			pout.print(str);
-		
+		pout.print(str);
+		pout.flush();
 	}
 	
 	//receive message with TCP or UDP
@@ -143,11 +144,8 @@ public class BookServer {
 	//Changes the mode of communication between client and server
 	String setMode(String str) throws IOException {
 		if (str.equals("T")) {
-			if (isUDP) {
-				s = new Socket();
-				sc = new Scanner(s.getInputStream());
-				pout = new PrintWriter(s.getOutputStream());
-			}
+			sc = new Scanner(s.getInputStream());
+			pout = new PrintWriter(s.getOutputStream());
 			return "The communication mode is set to TCP";
 		}
 		else {
