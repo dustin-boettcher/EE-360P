@@ -1,8 +1,6 @@
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.io.*;
-import java.util.*;
 public class BookClient {
   public static void main (String[] args) {
     String hostAddress;
@@ -34,35 +32,31 @@ public class BookClient {
 
       Scanner sc = new Scanner(new FileReader(commandFile));
 
+      String outputFileName = "out_" + clientId + ".txt";
+      FileWriter outputWriter = new FileWriter(outputFileName);
+
       while(sc.hasNextLine()) {
         String cmd = sc.nextLine();
         String[] tokens = cmd.split(" ");
 
         if (tokens[0].equals("setmode")) {
-          // TODO: set the mode of communication for sending commands to the server
           if (tokens[1].equals("T")) {
-            if (!server.isClosed()) {
-              server.close();
-            }
+            server.close();
             server = new Socket(hostAddress, tcpPort);
             din = new Scanner(server.getInputStream());
             pout = new PrintStream(server.getOutputStream());
-            System.out.println("The communication mode is set to TCP");
+            outputWriter.write("The communication mode is set to TCP\n");
           } else if (tokens[1].equals("U")) {
-            if (!server.isClosed()) {
-              server.close();
-            }
+            server.close();
             server = new Socket(hostAddress, udpPort);
             din = new Scanner(server.getInputStream());
             pout = new PrintStream(server.getOutputStream());
-            System.out.println("The communication mode is set to UDP");
+            outputWriter.write("The communication mode is set to UDP\n");
           } else {
             System.out.println("ERROR: No such command");
           }
         }
         else if (tokens[0].equals("borrow")) {
-          // TODO: send appropriate command to the server and display the
-          // appropriate responses form the server
           String command = "";
           for (int i = 0; i < tokens.length; i++) {
             command += tokens[i];
@@ -71,34 +65,33 @@ public class BookClient {
           pout.println(command);
           pout.flush();
           String result = din.nextLine();
-          System.out.println(result);
+          outputWriter.write(result + "\n");
         } else if (tokens[0].equals("return")) {
-          // TODO: send appropriate command to the server and display the
-          // appropriate responses form the server
           pout.println(tokens[0] + " " + tokens[1]);
           pout.flush();
           String result = din.nextLine();
-          System.out.println(result);
+          outputWriter.write(result + "\n");
         } else if (tokens[0].equals("inventory")) {
-          // TODO: send appropriate command to the server and display the
-          // appropriate responses form the server
           pout.println(tokens[0]);
           pout.flush();
-          String result = din.nextLine();
-          System.out.println(result);
+          String length = din.nextLine();
+          String[] result = new String[Integer.parseInt(length)];
+          for (int i = 0; i < Integer.parseInt(length); i++) {
+            result[i] = din.nextLine();
+          }
+          for (int i = 0; i < Integer.parseInt(length); i++) {
+            outputWriter.write(result[i] + "\n");
+          }
         } else if (tokens[0].equals("list")) {
-          // TODO: send appropriate command to the server and display the
-          // appropriate responses form the server
           pout.println(tokens[0] + " " + tokens[1]);
           pout.flush();
           String result = din.nextLine();
-          System.out.println(result);
+          outputWriter.write(result + "\n");
         } else if (tokens[0].equals("exit")) {
-          // TODO: send appropriate command to the server
           pout.println(tokens[0]);
           pout.flush();
-          String result = din.nextLine();
-          System.out.println(result);
+          server.close();
+          outputWriter.close();
         } else {
           System.out.println("ERROR: No such command");
         }
