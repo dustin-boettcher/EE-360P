@@ -76,7 +76,9 @@ public class BookClient {
             sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
             udpSocket.send(sPacket);
             rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            System.out.println("sending");
             udpSocket.receive(rPacket);
+            System.out.println("sent");
             result = new String(rPacket.getData(), 0, rPacket.getLength());
           }
           outputWriter.write(result + "\n");
@@ -89,7 +91,9 @@ public class BookClient {
           } else {
             byte[] buffer = new byte[command.length()];
             sPacket = new DatagramPacket(buffer, buffer.length, ia, udpPort);
+            System.out.println("sending");
             udpSocket.send(sPacket);
+            System.out.println("sent");
             rPacket = new DatagramPacket(rbuffer, rbuffer.length);
             udpSocket.receive(rPacket);
             result = new String(rPacket.getData(), 0, rPacket.getLength());

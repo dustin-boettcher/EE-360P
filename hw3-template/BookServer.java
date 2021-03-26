@@ -63,8 +63,8 @@ public class BookServer {
     	//a.start();
     	//
     	
-    	Thread a = new serverListener(7000);
-    	Thread b = new serverListener(8000);
+    	Thread a = new serverListener(tcpPort);
+    	Thread b = new serverListener(udpPort);
     	a.start(); b.start();
     	
     
@@ -80,7 +80,7 @@ public class BookServer {
 	  @Override
 	  public void run() {
 		  try {
-		  if (port == 7000) {
+		  if (port == tcpPort) {
 			  ServerSocket listener = new ServerSocket(port);
 			  Socket s;
 			  while((s = listener.accept()) != null) {
@@ -96,8 +96,10 @@ public class BookServer {
 			  while(true) {
 				  DatagramPacket datapacket = new DatagramPacket(buf ,  buf.length );
 				  datasocket.receive(datapacket);
-				  Thread t = new ServerThread(null, 8000, datapacket.getAddress(), buf, datasocket);
+				  System.out.println("Started UDP");
+				  Thread t = new ServerThread(null, port, datapacket.getAddress(), buf, datasocket);
 				  t.start();
+				  
 			  }
 		  }
 		  
@@ -122,7 +124,7 @@ public class BookServer {
 	            new InputStreamReader(System.in));
 	  
     public ServerThread(Socket s, int port, InetAddress address, byte[] buf, DatagramSocket dataSocket) {
-    	if (port == 7000) this.isTCP = true;
+    	if (port == tcpPort) this.isTCP = true;
     	else this.isTCP = false;
     	this.s = s;
     	this.buf = buf;
@@ -187,14 +189,18 @@ public class BookServer {
 	
 	//receive message with TCP or UDP
 	String receiveCommand() throws IOException {
+		System.out.println("RECEIVECOMMAND");
 		if (isTCP) {
+			System.out.println("TCP");
 			if (! sc.hasNextLine()) return null;
 			//if (s.isClosed()) return null;
 			return sc.nextLine();
 		}
 		else {
+			System.out.println("test");
 			DatagramPacket datapacket = new DatagramPacket(buf, buf.length);
-			String  retstring = new String(datapacket.getData(), 0, datapacket.getLength ());
+			String  retstring = new String(datapacket.getData(), 0, datapacket.getLength());
+			System.out.println(retstring);
 			return retstring;
 		}
 
