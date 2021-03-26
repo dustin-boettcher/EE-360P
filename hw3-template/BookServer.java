@@ -215,8 +215,13 @@ public class BookServer {
   //lists the current inventory
   static synchronized ArrayList<String> listInventory() {
 	  ArrayList<String> list = new ArrayList<String>();
+	  list.add(books.size() + "");
 	  for (String str: books)
 		  list.add(str + " " + inventory.get(str));
+	  //DEBUGGING
+	  for (String i: list) {
+		  System.out.println(i);
+	  }
 	  return list;
   }
   
