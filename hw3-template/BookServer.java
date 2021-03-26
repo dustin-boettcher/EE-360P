@@ -140,6 +140,7 @@ public class BookServer {
 	String receiveCommand() throws IOException {
 		//return reader.readLine();
 		//TCP
+		if (s.isClosed()) return null;
 		return sc.nextLine();
 
 	}
