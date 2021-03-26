@@ -63,6 +63,7 @@ public class BookServer {
     	while((s = listener.accept()) != null){
     		Thread t = new ServerThread(s);
     		t.start();
+    		System.out.println("New Thread");
     	}
     	listener.close();
     } catch(IOException e){System.err.println("Server aborted :" + e);}
@@ -115,6 +116,7 @@ public class BookServer {
 				if (tokens[0].equals("exit")) {
 					writeInventoryFile();
 					//TODO: close the connection
+					break;
 				}
 				command = receiveCommand();
 			}
@@ -139,6 +141,7 @@ public class BookServer {
 		//return reader.readLine();
 		//TCP
 		return sc.nextLine();
+
 	}
 	
 	//Changes the mode of communication between client and server
@@ -218,10 +221,6 @@ public class BookServer {
 	  list.add(books.size() + "");
 	  for (String str: books)
 		  list.add(str + " " + inventory.get(str));
-	  //DEBUGGING
-	  for (String i: list) {
-		  System.out.println(i);
-	  }
 	  return list;
   }
   
