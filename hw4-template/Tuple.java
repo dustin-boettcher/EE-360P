@@ -7,60 +7,52 @@ import java.io.IOException;
 
 public class Tuple implements WritableComparable{
 
-	private Text word1;
-        private Text word2;
+	private Text value;
 	private IntWritable count;
 
 	Tuple(){
-		set(new Text(), new Text(), new IntWritable());
+		set(new Text(),new IntWritable());
 	}
 
-	Tuple(Text v, Text w, IntWritable c){
-		set(v,w,c);
+	Tuple(Text v,IntWritable c){
+		set(v,c);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException{
-		word1.write(out);
-                word2.write(out);
+		value.write(out);
 		count.write(out);
 	}
 
-	public void set(Text t, Text w, IntWritable c){
-		this.word1=t;
-                this.word2=w;
+	public void set(Text t,IntWritable c){
+		this.value=t;
 		this.count=c;
 	}
 
 	@Override
 	public void readFields(DataInput input) throws IOException {
-		word1.readFields(input);
-                word2.readFields(input);
+		value.readFields(input);
 		count.readFields(input);
 	}
 	
 	@Override
 	public int compareTo(Object o){
 		Tuple that=(Tuple) o;
-		return this.word1.compareTo(that.getWord1()) && this.word2.compareTo(that.getWord2());
+		return this.value.compareTo(that.getValue());
 	}
 
 	
 	public int hashCode(){
-		return word1.hashCode()*10000+word2.hashCode()*100+count.hashCode();
+		return value.hashCode()*100+count.hashCode();
 	}
 
 	public String toString(){
-		return word1+" " + word2+" "+count;
+		return value+" "+count;
 	}
 
-	public Text getWord1(){
-		return this.word1;
+	public Text getValue(){
+		return this.value;
 	}
-
-        public Text getWord2(){
-                return this.word2;
-        }
 
 	public IntWritable getCount(){
 		return this.count;
