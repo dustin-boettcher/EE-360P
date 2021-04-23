@@ -1,4 +1,5 @@
 import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -7,6 +8,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.util.Tool;
@@ -21,6 +25,7 @@ public class TextAnalyzer extends Configured implements Tool {
     public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
+        
         private Text neighbor = new Text();
         private Tuple tuple = new Tuple();
 
@@ -51,21 +56,26 @@ public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own key / value types
     // NOTE: combiner's output key / value types have to be the same as those of mapper
-    public static class TextCombiner extends Reducer<Text, Iterable<Tuple>, Text, Tuple> {
+    public static class TextCombiner extends Reducer<Text, Tuple, Text, Tuple> {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
             throws IOException, InterruptedException
         {
+        	LinkedHashMap<String, Integer> set = new LinkedHashMap<String, Integer>();
             for (Tuple t: tuples) {
-            	if (t.getCount().get() >= 0) {
-            		int sum = t.getCount().get();
-            		for (Tuple u: tuples) {
-            			if (t.getValue().equals(u.getValue()) && (t != u)) {
-            				sum += u.getCount().get();
-            				u.set(u.getValue(), new IntWritable(0));
-            			}
-            		}
-            		context.write(key, new Tuple(t.getValue(), new IntWritable(sum)));
+            	String neighbor = t.getValue().toString();
+            	if (set.containsKey(neighbor)) {
+            		set.put(neighbor, set.get(neighbor) + t.getCount().get());
             	}
+            	else {
+            		set.put(neighbor, t.getCount().get());
+            	}
+            	
+            }
+            
+            for (Map.Entry<String, Integer> mapElement : set.entrySet()) {
+            	String value = mapElement.getKey();
+            	Integer count = mapElement.getValue();
+            	context.write(key, new Tuple(new Text(value), new IntWritable(count)));
             }
             
         }
@@ -73,40 +83,35 @@ public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own input key / value types, i.e., the output
     // key / value types of your mapper function
-    public static class TextReducer extends Reducer<Text, Iterable<Tuple>, Text, Text> {
+    public static class TextReducer extends Reducer<Text, Tuple, Text, Text> {
         private final static Text emptyText = new Text("");
 
         public void reduce(Text key, Iterable<Tuple> queryTuples, Context context)
             throws IOException, InterruptedException
         {
-            // Implementation of you reducer function
+        	
+        	LinkedHashMap<String, Integer> set = new LinkedHashMap<String, Integer>();
             for (Tuple t: queryTuples) {
-            	if (t.getCount().get() >= 0) {
-            		int sum = t.getCount().get();
-            		for (Tuple u: queryTuples) {
-            			if (t.getValue().equals(u.getValue()) && (t != u)) {
-            				sum += u.getCount().get();
-            				u.set(u.getValue(), new IntWritable(0));
-            			}
-            		}
-            		//context.write(key, new Tuple(t.getValue(), sum);
-            		Text value = new Text();
-            		String weight = String.valueOf(sum);
-            		value.set(" " + t.getValue() + " " + weight);
-            		context.write(key, value);
+            	String neighbor = t.getValue().toString();
+            	if (set.containsKey(neighbor)) {
+            		set.put(neighbor, set.get(neighbor) + t.getCount().get());
             	}
+            	else {
+            		set.put(neighbor, t.getCount().get());
+            	}
+            	
+            }
+            
+            // Implementation of you reducer function
+            for (Map.Entry<String, Integer> mapElement : set.entrySet()) {
+            	String neighbor = mapElement.getKey();
+            	Integer count = mapElement.getValue();
+            	Text value = new Text();
+            	String weight = count.toString();
+            	value.set(" " + neighbor + " " + weight);
+            	context.write(key, value);
             }
 
-            // Write out the results; you may change the following example
-            // code to fit with your reducer function.
-            // Write out each edge and its weight
-	        //Text value = new Text();
-            //for(String neighbor: map.keySet()){
-            //    String weight = map.get(neighbor).toString();
-            //    value.set(" " + neighbor + " " + weight);
-            //    context.write(key, value);
-            //}
-            // Empty line for ending the current context key
             context.write(emptyText, emptyText);
         }
     }
@@ -115,7 +120,7 @@ public class TextAnalyzer extends Configured implements Tool {
         Configuration conf = this.getConf();
 
         // Create job
-        Job job = new Job(conf, "EID1_EID2"); // Replace with your EIDs
+        Job job = new Job(conf, "dmb4377_ji4399"); // Replace with your EIDs
         job.setJarByClass(TextAnalyzer.class);
 
         // Setup MapReduce job
@@ -131,8 +136,8 @@ public class TextAnalyzer extends Configured implements Tool {
         job.setOutputValueClass(Text.class);
         //   If your mapper and combiner's  output types are different from Text.class,
         //   then uncomment the following lines to specify the data types.
-        //job.setMapOutputKeyClass(?.class);
-        //job.setMapOutputValueClass(?.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Tuple.class);
 
         // Input
         FileInputFormat.addInputPath(job, new Path(args[0]));
@@ -157,6 +162,3 @@ public class TextAnalyzer extends Configured implements Tool {
     //
     // }
 }
-
-
-
