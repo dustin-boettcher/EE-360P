@@ -16,17 +16,40 @@ public class TextAnalyzer extends Configured implements Tool {
     // Replace "?" with your own output key / value types
     // The four template data types are:
     //     <Input Key Type, Input Value Type, Output Key Type, Output Value Type>
-    public static class TextMapper extends Mapper<LongWritable, Text, ?, ?> {
+    public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
+        private final static IntWritable one = new IntWritable(1);
+        private Text word = new Text();
+        private Text neighbor = new Text();
+        private Tuple tuple = new Tuple();
+
         public void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException
         {
-            // Implementation of you mapper function
+            // Implementation of your mapper function
+            String line = value.toString().toLowerCase();
+
+            // Replace non letter characters with " "
+            String line = line.replaceAll("[^A-Za-z]", " ");
+
+
+            StringTokenizer tokenizer = new StringTokenizer(line);
+            while (tokenizer.hasMoreTokens()) {
+                word.set(tokenizer.nextToken());
+                StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
+                while (tokenizer_neighbors.hasMoreTokens()) {
+                    neighbor.set(tokenizer_neighbors.nextToken);
+                    if (!word.equals(neighbor)) {
+                        tuple.set(neighbor, one);
+                        context.write(word, tuple);
+                    } 
+                }
+            }
         }
     }
 
     // Replace "?" with your own key / value types
     // NOTE: combiner's output key / value types have to be the same as those of mapper
-    public static class TextCombiner extends Reducer<?, ?, ?, ?> {
+    public static class TextCombiner extends Reducer<Text, Iterable<Tuple>, Text, Tuple> {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
             throws IOException, InterruptedException
         {
@@ -36,7 +59,7 @@ public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own input key / value types, i.e., the output
     // key / value types of your mapper function
-    public static class TextReducer extends Reducer<?, ?, Text, Text> {
+    public static class TextReducer extends Reducer<Text, Iterable<Tuple>, Text, Text> {
         private final static Text emptyText = new Text("");
 
         public void reduce(Text key, Iterable<Tuple> queryTuples, Context context)
@@ -46,14 +69,14 @@ public class TextAnalyzer extends Configured implements Tool {
 
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
-            //   Write out each edge and its weight
-	    Text value = new Text();
+            // Write out each edge and its weight
+	        Text value = new Text();
             for(String neighbor: map.keySet()){
                 String weight = map.get(neighbor).toString();
                 value.set(" " + neighbor + " " + weight);
                 context.write(key, value);
             }
-            //   Empty line for ending the current context key
+            // Empty line for ending the current context key
             context.write(emptyText, emptyText);
         }
     }
@@ -68,10 +91,10 @@ public class TextAnalyzer extends Configured implements Tool {
         // Setup MapReduce job
         job.setMapperClass(TextMapper.class);
         
-	// set local combiner class
+        // set local combiner class
         job.setCombinerClass(TextCombiner.class);
-	// set reducer class        
-	job.setReducerClass(TextReducer.class);
+        // set reducer class        
+        job.setReducerClass(TextReducer.class);
 
         // Specify key / value types (Don't change them for the purpose of this assignment)
         job.setOutputKeyClass(Text.class);
