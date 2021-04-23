@@ -98,12 +98,12 @@ public class TextAnalyzer extends Configured implements Tool {
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
             // Write out each edge and its weight
-	        Text value = new Text();
-            for(String neighbor: map.keySet()){
-                String weight = map.get(neighbor).toString();
-                value.set(" " + neighbor + " " + weight);
-                context.write(key, value);
-            }
+	        //Text value = new Text();
+            //for(String neighbor: map.keySet()){
+            //    String weight = map.get(neighbor).toString();
+            //    value.set(" " + neighbor + " " + weight);
+            //    context.write(key, value);
+            //}
             // Empty line for ending the current context key
             context.write(emptyText, emptyText);
         }
