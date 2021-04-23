@@ -1,3 +1,4 @@
+import java.io.IOException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -6,6 +7,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import java.util.StringTokenizer;
 
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -29,7 +31,7 @@ public class TextAnalyzer extends Configured implements Tool {
             String line = value.toString().toLowerCase();
 
             // Replace non letter characters with " "
-            String line = line.replaceAll("[^A-Za-z]", " ");
+            line = line.replaceAll("[^A-Za-z]", " ");
 
 
             StringTokenizer tokenizer = new StringTokenizer(line);
@@ -37,7 +39,7 @@ public class TextAnalyzer extends Configured implements Tool {
                 word.set(tokenizer.nextToken());
                 StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
                 while (tokenizer_neighbors.hasMoreTokens()) {
-                    neighbor.set(tokenizer_neighbors.nextToken);
+                    neighbor.set(tokenizer_neighbors.nextToken());
                     if (!word.equals(neighbor)) {
                         tuple.set(neighbor, one);
                         context.write(word, tuple);
@@ -54,15 +56,15 @@ public class TextAnalyzer extends Configured implements Tool {
             throws IOException, InterruptedException
         {
             for (Tuple t: tuples) {
-            	if (t.getCount() >= 0) {
-            		int sum = t.getCount();
+            	if (t.getCount().get() >= 0) {
+            		int sum = t.getCount().get();
             		for (Tuple u: tuples) {
             			if (t.getValue().equals(u.getValue()) && (t != u)) {
-            				sum += u.getCount();
-            				u.set(u.getValue(), 0);
+            				sum += u.getCount().get();
+            				u.set(u.getValue(), new IntWritable(0));
             			}
             		}
-            		context.write(key, new Tuple(t.getValue(), sum);
+            		context.write(key, new Tuple(t.getValue(), new IntWritable(sum)));
             	}
             }
             
@@ -79,12 +81,12 @@ public class TextAnalyzer extends Configured implements Tool {
         {
             // Implementation of you reducer function
             for (Tuple t: queryTuples) {
-            	if (t.getCount() >= 0) {
-            		int sum = t.getCount();
+            	if (t.getCount().get() >= 0) {
+            		int sum = t.getCount().get();
             		for (Tuple u: queryTuples) {
             			if (t.getValue().equals(u.getValue()) && (t != u)) {
-            				sum += u.getCount();
-            				u.set(u.getValue(), 0);
+            				sum += u.getCount().get();
+            				u.set(u.getValue(), new IntWritable(0));
             			}
             		}
             		//context.write(key, new Tuple(t.getValue(), sum);
