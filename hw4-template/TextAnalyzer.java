@@ -53,7 +53,19 @@ public class TextAnalyzer extends Configured implements Tool {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
             throws IOException, InterruptedException
         {
-            // Implementation of you combiner function
+            for (Tuple t: tuples) {
+            	if (t.getCount() >= 0) {
+            		int sum = t.getCount();
+            		for (Tuple u: tuples) {
+            			if (t.getValue().equals(u.getValue()) && (t != u)) {
+            				sum += u.getCount();
+            				u.set(u.getValue(), 0);
+            			}
+            		}
+            		context.write(key, new Tuple(t.getValue(), sum);
+            	}
+            }
+            
         }
     }
 
@@ -66,6 +78,22 @@ public class TextAnalyzer extends Configured implements Tool {
             throws IOException, InterruptedException
         {
             // Implementation of you reducer function
+            for (Tuple t: queryTuples) {
+            	if (t.getCount() >= 0) {
+            		int sum = t.getCount();
+            		for (Tuple u: queryTuples) {
+            			if (t.getValue().equals(u.getValue()) && (t != u)) {
+            				sum += u.getCount();
+            				u.set(u.getValue(), 0);
+            			}
+            		}
+            		//context.write(key, new Tuple(t.getValue(), sum);
+            		Text value = new Text();
+            		String weight = String.valueOf(sum);
+            		value.set(" " + t.getValue() + " " + weight);
+            		context.write(key, value);
+            	}
+            }
 
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
