@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.HashSet;
 
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -34,22 +35,23 @@ public class TextAnalyzer extends Configured implements Tool {
         {
             // Implementation of your mapper function
             String line = value.toString().toLowerCase();
-
-            // Replace non letter characters with " "
             line = line.replaceAll("[^A-Za-z]", " ");
 
-
             StringTokenizer tokenizer = new StringTokenizer(line);
+            HashSet<String> duplicates = new HashSet<>();
             while (tokenizer.hasMoreTokens()) {
                 word.set(tokenizer.nextToken());
-                StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
-                while (tokenizer_neighbors.hasMoreTokens()) {
-                    neighbor.set(tokenizer_neighbors.nextToken());
-                    if (!word.equals(neighbor)) {
-                        tuple.set(neighbor, one);
-                        context.write(word, tuple);
-                    } 
-                }
+                if (!duplicates.contains(word.toString())) {
+                    duplicates.add(word.toString());
+                    StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
+                    while (tokenizer_neighbors.hasMoreTokens()) {
+                        neighbor.set(tokenizer_neighbors.nextToken());
+                        if (!word.equals(neighbor)) {
+                            tuple.set(neighbor, one);
+                            context.write(word, tuple);
+                        } 
+                    }
+                } 
             }
         }
     }
