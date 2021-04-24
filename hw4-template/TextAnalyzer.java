@@ -56,20 +56,6 @@ public class TextAnalyzer extends Configured implements Tool {
             				context.write(word, new Tuple(new Text(neighbor), one));
             	}
             }
-            //while (tokenizer.hasMoreTokens()) {
-            //    word.set(tokenizer.nextToken());
-            //    if (!duplicates.contains(word.toString())) {
-            //        duplicates.add(word.toString());
-            //        StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
-            //        while (tokenizer_neighbors.hasMoreTokens()) {
-            //            neighbor.set(tokenizer_neighbors.nextToken());
-            //            if (!word.equals(neighbor)) {
-            //                tuple.set(neighbor, one);
-            //                context.write(word, tuple);
-            //            } 
-            //        }
-            //    } 
-            //}
         }
     }
 
