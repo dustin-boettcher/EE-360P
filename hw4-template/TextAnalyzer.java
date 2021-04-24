@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -38,21 +39,37 @@ public class TextAnalyzer extends Configured implements Tool {
             line = line.replaceAll("[^A-Za-z]", " ");
 
             StringTokenizer tokenizer = new StringTokenizer(line);
-            HashSet<String> duplicates = new HashSet<>();
+            HashSet<String> words = new HashSet<>();
             while (tokenizer.hasMoreTokens()) {
-                word.set(tokenizer.nextToken());
-                if (!duplicates.contains(word.toString())) {
-                    duplicates.add(word.toString());
-                    StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
-                    while (tokenizer_neighbors.hasMoreTokens()) {
-                        neighbor.set(tokenizer_neighbors.nextToken());
-                        if (!word.equals(neighbor)) {
-                            tuple.set(neighbor, one);
-                            context.write(word, tuple);
-                        } 
-                    }
-                } 
+            	word.set(tokenizer.nextToken());
+            	if (!words.contains(word.toString()))
+            		words.add(word.toString());
             }
+            
+            Iterator<String> i = words.iterator();
+            while (i.hasNext()) {
+            	word.set(i.next());
+            	Iterator<String> j = words.iterator();
+            	while (j.hasNext()) {
+            		String neighbor = j.next();
+            		if (! neighbor.equals(word.toString()))
+            				context.write(word, new Tuple(new Text(neighbor), one));
+            	}
+            }
+            //while (tokenizer.hasMoreTokens()) {
+            //    word.set(tokenizer.nextToken());
+            //    if (!duplicates.contains(word.toString())) {
+            //        duplicates.add(word.toString());
+            //        StringTokenizer tokenizer_neighbors = new StringTokenizer(line);
+            //        while (tokenizer_neighbors.hasMoreTokens()) {
+            //            neighbor.set(tokenizer_neighbors.nextToken());
+            //            if (!word.equals(neighbor)) {
+            //                tuple.set(neighbor, one);
+            //                context.write(word, tuple);
+            //            } 
+            //        }
+            //    } 
+            //}
         }
     }
 
